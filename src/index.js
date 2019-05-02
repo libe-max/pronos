@@ -6,9 +6,7 @@ import * as serviceWorker from './serviceWorker'
 import config from './config'
 import 'whatwg-fetch'
 
-const App = props => <div>
-  Replace this component with your app
-</div>
+import Pronos from './Pronos'
 
 class AppWrapper extends Component {
   render () {
@@ -32,7 +30,7 @@ class AppWrapper extends Component {
         <meta name='twitter:image' content={image} />
         <link rel='stylesheet' href={stylesheetUrl} />
       </Helmet>
-      <App {...props} />{
+      <Pronos {...props} />{
       tracking.active
         ? <LoadAndPing
           format={tracking.format}
