@@ -23,7 +23,7 @@ export default class Luckies extends Component {
    *
    * * * * * * * * * * * * * * * * */
   deleteWinners () {
-    this.props.submitResult('LL', 1, '')
+    if (!this.props.data.freeze) this.props.submitResult('LL', 1, '')
   }
 
   /* * * * * * * * * * * * * * * * *
@@ -69,13 +69,15 @@ export default class Luckies extends Component {
       <div className={`${c}__groups`}>{
         data.groups.map(group => {
           // [WIP] Could check if one group has already a LL
-          console.log(group)
+          const groupHasAlreadyAWinner = data.winners.some(winner => {
+            return group.teams.indexOf(winner) + 1
+          })
           return <div key={group.name}
             className={`${c}__group`}>{
             group.teams.map(id => {
               const team = this.findTeam(id)
               return <button key={id}
-                disabled={data.freeze}
+                disabled={data.freeze || groupHasAlreadyAWinner}
                 onClick={e => this.addWinner(id)}
                 className={`${c}__team`}>
                 <img src={team.icon} />
@@ -125,6 +127,11 @@ export default class Luckies extends Component {
           // </div>
         })
       }</div>
+      <div className={`${c}__reset`} onClick={this.deleteWinners}>
+        <Annotation>
+          <a>Remettre à zero</a>
+        </Annotation>
+      </div>
     </div>
   }
 }

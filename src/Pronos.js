@@ -61,13 +61,13 @@ export default class Pronos extends Component {
       const [teams, groups, format, page, results, luckyLosers, freeze] = parseTsvWithTabs({
         tsv: rawData,
         tabsParams: [
-          { start: 0, end: 4, keysLinePos: 1 },
-          { start: 5, end: 7, keysLinePos: 1 },
-          { start: 8, end: 11, keysLinePos: 1 },
-          { start: 12, end: 13, keysLinePos: 1 },
-          { start: 14, end: 16, keysLinePos: 1 },
-          { start: 17, end: 18, keysLinePos: 1 },
-          { start: 19, end: 20, keysLinePos: 1 }
+          { start: 0, end: 5, keysLinePos: 1 },
+          { start: 6, end: 8, keysLinePos: 1 },
+          { start: 9, end: 12, keysLinePos: 1 },
+          { start: 13, end: 14, keysLinePos: 1 },
+          { start: 15, end: 17, keysLinePos: 1 },
+          { start: 18, end: 19, keysLinePos: 1 },
+          { start: 20, end: 21, keysLinePos: 1 }
         ]
       })
       this.setState({
@@ -80,9 +80,9 @@ export default class Pronos extends Component {
             ...format[0],
             lucky_losers: luckyLosers
           },
-          freeze: [], //freeze,
+          freeze: freeze,
           page: page[0],
-          results: []//results
+          results: results
         }
       })
     }).catch(err => {
@@ -292,6 +292,19 @@ export default class Pronos extends Component {
           const roundIsComplete = round.matches.every(match => match.winner)
           round.complete = roundIsComplete
         }
+        if (i > 0) {
+          const prevRound = FINAL[i - 1]
+          prevRound.matches.forEach(match => {
+            const destId = match.destination
+            const winner = match.winner
+            const destination = round.matches.find(match => {
+              return match.id === destId
+            })
+            if (destination.teams.length < 2) {
+              destination.teams.push(winner)
+            }
+          })
+        }
       }
     }
     // Find frozen matches
@@ -350,7 +363,6 @@ export default class Pronos extends Component {
     const draw = this.buildDraw()
 
     const classes = [c]
-    console.log(draw.luckies)
 
     if (loading) {
       classes.push(`${c}_loading`)

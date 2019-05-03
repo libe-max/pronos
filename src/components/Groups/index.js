@@ -14,6 +14,7 @@ export default class Groups extends Component {
     this.c = 'pronos-groups'
     this.findTeam = this.findTeam.bind(this)
     this.deleteWinner = this.deleteWinner.bind(this)
+    this.deleteAllWinners = this.deleteAllWinners.bind(this)
     this.addWinner = this.addWinner.bind(this)
   }
 
@@ -29,6 +30,17 @@ export default class Groups extends Component {
       || group.winners.length === 2) {
       this.props.submitResult('RR', groupName, '')
     }
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
+   * DELETE ALL WINNERS
+   *
+   * * * * * * * * * * * * * * * * */
+  deleteAllWinners () {
+    this.props.data.forEach(group => {
+      if (!group.freeze) this.deleteWinner(group.name)
+    })
   }
 
   /* * * * * * * * * * * * * * * * *
@@ -73,7 +85,7 @@ export default class Groups extends Component {
     return <div className={classes.join(' ')}>{
       data.map(group => {
         const groupClasses = [`${c}__group`]
-        if (group.freeze) groupClasses.push(`${c}__group_freeze`)
+        if (group.freeze) groupClasses.push(`${c}__group_freeze`)          
         return <div key={group._id}
           className={groupClasses.join(' ')}>
           <div className={`${c}__group-name`}>
@@ -123,7 +135,12 @@ export default class Groups extends Component {
             })
           }</div>
         </div>
-      })
-    }</div>
+      })}
+      <div className={`${c}__reset`} onClick={this.deleteAllWinners}>
+        <Annotation>
+          <a>Remettre à zero</a>
+        </Annotation>
+      </div>
+    </div>
   }
 }
