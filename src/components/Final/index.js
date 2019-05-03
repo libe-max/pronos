@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 
-export default class Draw extends Component {
+export default class Final extends Component {
   /* * * * * * * * * * * * * * * * *
    *
    * CONSTRUCTOR
@@ -8,7 +8,7 @@ export default class Draw extends Component {
    * * * * * * * * * * * * * * * * */
   constructor () {
     super()
-    this.c = 'pronos-draw'
+    this.c = 'pronos-final'
   }
 
   /* * * * * * * * * * * * * * * * *
@@ -17,12 +17,10 @@ export default class Draw extends Component {
    *
    * * * * * * * * * * * * * * * * */
   render () {
-    const { c, props } = this
-
+    const { c } = this
     const classes = [c]
-
     return <div className={classes.join(' ')}>
-      Draw
+      FINAL
     </div>
   }
 }

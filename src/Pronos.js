@@ -4,7 +4,9 @@ import LoadingError from 'libe-components/lib/blocks/LoadingError'
 import ShareArticle from 'libe-components/lib/blocks/ShareArticle'
 import InterTitle from 'libe-components/lib/text-levels/InterTitle'
 import Paragraph from 'libe-components/lib/text-levels/Paragraph'
-import Draw from './components/Draw'
+import Groups from './components/Groups'
+import Luckies from './components/Luckies'
+import Final from './components/Final'
 
 export default class Pronos extends Component {
   /* * * * * * * * * * * * * * * * *
@@ -17,6 +19,7 @@ export default class Pronos extends Component {
     this.c = 'pronos'
     this.fetchData = this.fetchData.bind(this)
     this.buildDraw = this.buildDraw.bind(this)
+    this.submitResult = this.submitResult.bind(this)
     this.state = {
       loading: true,
       error: null,
@@ -29,12 +32,7 @@ export default class Pronos extends Component {
           lucky_losers: false,
           third_place_match: false
         },
-        results: {
-          groups: {},
-          lucky_losers: {},
-          final_phase: [],
-          third_place_match: null
-        }
+        results: {}
       }
     }
   }
@@ -59,7 +57,7 @@ export default class Pronos extends Component {
       if (res.ok) return res.text()
       else throw new Error(`Error: ${res.status}`)
     }).then(rawData => {
-      const [teams, groups, format, page, results, luckyLosers] = parseTsvWithTabs({
+      const [teams, groups, format, page, results, luckyLosers, freeze] = parseTsvWithTabs({
         tsv: rawData,
         tabsParams: [
           { start: 0, end: 4, keysLinePos: 1 },
@@ -67,11 +65,9 @@ export default class Pronos extends Component {
           { start: 8, end: 11, keysLinePos: 1 },
           { start: 12, end: 13, keysLinePos: 1 },
           { start: 14, end: 16, keysLinePos: 1 },
-          { start: 17, end: 18, keysLinePos: 1 }
+          { start: 17, end: 18, keysLinePos: 1 },
+          { start: 19, end: 20, keysLinePos: 1 }
         ]
-      })
-      results.push({
-        round: '8', number: '1', winners: 'ita'
       })
       const draw = this.buildDraw({
         groups: groups,
@@ -79,16 +75,18 @@ export default class Pronos extends Component {
           ...format[0],
           lucky_losers: luckyLosers
         },
-        results: results
+        results: results,
+        freeze: freeze
       })
       this.setState({
         loading: false,
         error: null,
         data: {
+          results: results,
           page: page[0],
           teams: teams,
           draw
-        },
+        }
       })
     }).catch(err => {
       console.warn(err)
@@ -126,32 +124,28 @@ export default class Pronos extends Component {
         return group._id === _id
       })
       GROUPS[matchId].winners = winners
-      GROUPS[matchId].freeze = true
     })
     const groupsIsComplete = GROUPS.every(group => {
       const { winners, outputs } = group
       return winners.length === outputs.length
     })
-    // Create LUCKYS round object and transform it
+    // Create LUCKIES round object and transform it
     // accordingly to results
-    const LUCKYS = {
+    const LUCKIES = {
       _id: 'LL-1',
       groups: [],
-      outputs: data.format.lucky_losers
-        .map(out => {
-          return {
-            ...out,
-            to: out.to
-              .split(',')
-              .map(elt => elt.trim())
-          }
-        }),
+      outputs: data.format.lucky_losers.map(out => ({
+        ...out,
+        to: out.to
+          .split(',')
+          .map(elt => elt.trim())
+      })),
       winners: [],
       winners_origin: '',
       selected_output: null,
       freeze: false
     }
-    // Fill the LUCKYS round with all the teams in "GROUPS"
+    // Fill the LUCKIES round with all the teams in "GROUPS"
     // that are not found in GROUP.winners
     GROUPS.forEach(group => {
       const teams = group.teams
@@ -161,13 +155,13 @@ export default class Pronos extends Component {
         const winnerIndex = losers.findIndex(team => team === winner)
         losers[winnerIndex] = null
       })
-      LUCKYS.groups.push({
+      LUCKIES.groups.push({
         name: group.name,
         teams: losers.filter(team => team)
       })
     })
     // If the group stage is over, we can populate
-    // LUCKYS with the results we find in results object
+    // LUCKIES with the results we find in results object
     if (groupsIsComplete) {
       data.results.forEach(result => {
         if (result.round !== 'LL') return
@@ -187,11 +181,11 @@ export default class Pronos extends Component {
             return a.group_origin.localeCompare(b.group_origin)
           })
         winners.forEach(winner => {
-          const foundInLosers = LUCKYS.groups.some(group => {
+          const foundInLosers = LUCKIES.groups.some(group => {
             const foundInGroup = group.teams.some(team => team === winner.team)
             if (foundInGroup) {
-              LUCKYS.winners.push(winner.team)
-              LUCKYS.winners_origin += group.name
+              LUCKIES.winners.push(winner.team)
+              LUCKIES.winners_origin += group.name
             }
             return foundInGroup
           })
@@ -199,14 +193,14 @@ export default class Pronos extends Component {
         })
       })
     }
-    // Find the output of the LUCKYS stage according to it's winners
-    LUCKYS.winners_origin = LUCKYS.winners_origin.split('').sort().join('')
-    const luckysIsValid = LUCKYS.outputs.length === 0 || LUCKYS.outputs.some(output => {
-      return (output.from.length >= LUCKYS.winners_origin.length)
+    // Find the output of the LUCKIES stage according to it's winners
+    LUCKIES.winners_origin = LUCKIES.winners_origin.split('').sort().join('')
+    const luckysIsValid = LUCKIES.outputs.length === 0 || LUCKIES.outputs.some(output => {
+      return (output.from.length >= LUCKIES.winners_origin.length)
     })
-    const luckysIsComplete = LUCKYS.outputs.length === 0 || LUCKYS.outputs.some(output => {
-      if (output.from === LUCKYS.winners_origin) {
-        LUCKYS.selected_output = output.to
+    const luckysIsComplete = LUCKIES.outputs.length === 0 || LUCKIES.outputs.some(output => {
+      if (output.from === LUCKIES.winners_origin) {
+        LUCKIES.selected_output = output.to
         return true
       } else {
         return false
@@ -215,7 +209,7 @@ export default class Pronos extends Component {
     // Create the FINAL stage object
     const winners = []
     GROUPS.forEach(group => winners.push(...group.winners))
-    winners.push(...LUCKYS.winners)
+    winners.push(...LUCKIES.winners)
     // Create an object for each round, based on the 
     // data.format.final_phase value which gives the nb of
     // rounds of the final phase
@@ -228,15 +222,15 @@ export default class Pronos extends Component {
         round: `${round/2}`,
         number: `${j+1}`,
         destination: round !== 2 ? `${round/4}-${((j+1)+(j+1)%2)/2}` : 'WINNER',
-        complete: false,
         teams: [],
         winner: null,
         freeze: false
       }))
       const thisRound = {
         nb_teams: round,
-        round_name: round / 2,
-        matches: roundMatches
+        name: (round / 2).toString(),
+        matches: roundMatches,
+        complete: false,
       }
       FINAL.push(thisRound)
       FINAL.all_matches.push(...roundMatches)
@@ -255,9 +249,9 @@ export default class Pronos extends Component {
           destMatch.teams.push(pair.team)
         })
       })
-      const luckysAndDestinations = LUCKYS.winners.map((winner, i) => ({
+      const luckysAndDestinations = LUCKIES.winners.map((winner, i) => ({
         team: winner,
-        destination: LUCKYS.selected_output[i]
+        destination: LUCKIES.selected_output[i]
       }))
       luckysAndDestinations.forEach(pair => {
         const destMatch = FINAL.all_matches.find(match => match.id === pair.destination)
@@ -267,19 +261,69 @@ export default class Pronos extends Component {
     // If groupIsComplete andluckysIsComplete, fill the first
     // round with the given results
     if (groupsIsComplete && luckysIsComplete) {
-      console.log(data.results)
+      for (let i = 0; i < FINAL.length; i++) {
+        const round = FINAL[i]
+        const prevRoundIsComplete = i === 0
+          ? groupsIsComplete && luckysIsComplete
+          : FINAL[i - 1].complete
+        if (prevRoundIsComplete) {
+          data.results.forEach(result => {
+            const resultId = `${result.round}-${result.number}`
+            if (round.name !== result.round) return false
+            const foundMatch = round.matches.find(match => match.id === resultId)
+            if (!foundMatch) return false
+            const winnerIsInTeams = foundMatch.teams.indexOf(result.winners) + 1
+            if (!winnerIsInTeams) return false
+            foundMatch.winner = result.winners
+          })
+          const roundIsComplete = round.matches.every(match => match.winner)
+          round.complete = roundIsComplete
+        }
+      }
     }
-    console.log(FINAL)
-    // console.log(GROUPS, LUCKYS)
-
-
+    // Find frozen matches
+    data.freeze.forEach(frozen => {
+      const frozenId = `${frozen.round}-${frozen.number}`
+      if (frozen.round === 'RR') {
+        const foundGroup = GROUPS.find(group => group._id === frozenId)
+        if (!foundGroup) return
+        foundGroup.freeze = true
+      } else if (frozen.round === 'LL') {
+        LUCKIES.freeze = true
+      } else if (frozen.round === 'TPM') {
+        // Not handled
+      } else {
+        FINAL.forEach(round => {
+          const foundMatch = round.matches.find(match => match.id === frozenId)
+          if (!foundMatch) return
+          foundMatch.freeze = true
+        })
+      }
+    })
 
     return {
-      groups: [],
-      lucky_losers: {},
-      final_phase: [],
-      third_place_match: {}
+      groups: GROUPS,
+      luckies: LUCKIES,
+      final: FINAL
     }
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
+   * SUBMIT RESULT
+   *
+   * * * * * * * * * * * * * * * * */
+  submitResult(match, winners) {
+    const [round, number] = match.split('-')
+    this.setState(state => ({
+      data: {
+        ...state.data,
+        results: [
+          ...state.data.results,
+          { round, number, winners }
+        ]
+      }
+    }))
   }
 
   /* * * * * * * * * * * * * * * * *
@@ -290,14 +334,14 @@ export default class Pronos extends Component {
   render () {
     const { c, state, props } = this
     const { loading, error, data } = state
-    const { page, teams, groups, format, results } = data
+    const { page, teams, draw, results } = data
 
     const classes = [c]
 
     if (loading) {
       classes.push(`${c}_loading`)
       return <div className={classes.join(' ')} />
-    } else if (error) {
+    } else if (error || !draw) {
       classes.push(`${c}_error`)
       return <div className={classes.join(' ')}>
         <LoadingError />
@@ -305,19 +349,27 @@ export default class Pronos extends Component {
     }
 
     return <div className={classes.join(' ')}>
-      <InterTitle>{page.title}</InterTitle>
-      <Paragraph>{page.intro}</Paragraph>
-      <ShareArticle short
-        iconsOnly
-        url={props.meta.url}
-        tweet={page.tweet} />
-      <div className={`${c}__draw`}>
-        <Draw {...data} />
+      <div className={`${c}__head`}>
+        <InterTitle level={1}>{page.title}</InterTitle>
+        <Paragraph>{page.intro}</Paragraph>
       </div>
-      <ShareArticle short
-        iconsOnly
-        url={props.meta.url}
-        tweet={page.tweet} />
+      <div className={`${c}__share`}>
+        <ShareArticle short
+          iconsOnly
+          url={props.meta.url}
+          tweet={page.tweet} />
+      </div>
+      <div className={`${c}__draw`}>
+        <Groups teams={teams} data={draw.groups} submitResult={this.submitResult} />
+        <Luckies teams={teams} data={draw.luckies} submitResult={this.submitResult} />
+        <Final teams={teams} data={draw.final} submitResult={this.submitResult} />
+      </div>
+      <div className={`${c}__share`}>
+        <ShareArticle short
+          iconsOnly
+          url={props.meta.url}
+          tweet={page.tweet} />
+      </div>
     </div>
   }
 }
