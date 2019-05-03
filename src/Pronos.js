@@ -29,10 +29,11 @@ export default class Pronos extends Component {
         groups: [],
         format: {
           group_stage: false,
-          lucky_losers: false,
+          lucky_losers: [],
           third_place_match: false
         },
-        results: {}
+        results: [],
+        freeze: []
       }
     }
   }
@@ -69,23 +70,19 @@ export default class Pronos extends Component {
           { start: 19, end: 20, keysLinePos: 1 }
         ]
       })
-      const draw = this.buildDraw({
-        groups: groups,
-        format: {
-          ...format[0],
-          lucky_losers: luckyLosers
-        },
-        results: results,
-        freeze: freeze
-      })
       this.setState({
         loading: false,
         error: null,
         data: {
-          results: results,
-          page: page[0],
           teams: teams,
-          draw
+          groups: groups,
+          format: {
+            ...format[0],
+            lucky_losers: luckyLosers
+          },
+          freeze: [], //freeze,
+          page: page[0],
+          results: []//results
         }
       })
     }).catch(err => {
@@ -99,10 +96,16 @@ export default class Pronos extends Component {
 
   /* * * * * * * * * * * * * * * * *
    *
-   * INTERPRET RESULTS
+   * BUILD DRAW
    *
    * * * * * * * * * * * * * * * * */
-  buildDraw (data) {
+  buildDraw () {
+    const data = {
+      groups: this.state.data.groups,
+      format: this.state.data.format,
+      results: this.state.data.results,
+      freeze: this.state.data.freeze
+    }
     // Create GROUPS round object
     const GROUPS = data.groups.map(group => {
       return {
@@ -111,7 +114,8 @@ export default class Pronos extends Component {
         teams: group.teams.split(',').map(team => team.trim()),
         outputs: group.outputs.split(',').map(out => out.trim()),
         winners: [],
-        freeze: false
+        freeze: false,
+        complete: false
       }
     })
     // Browse "results" object and look for groups round
@@ -119,15 +123,20 @@ export default class Pronos extends Component {
     data.results.forEach(result => {
       if (result.round !== 'RR') return
       const _id = `${result.round}-${result.number}`
-      const winners = result.winners.split(',').map(team => team.trim())
+      const winners = result.winners.split(',').map(team => team.trim()).filter(e => e)
       const matchId = GROUPS.findIndex(group => {
         return group._id === _id
       })
       GROUPS[matchId].winners = winners
     })
-    const groupsIsComplete = GROUPS.every(group => {
+    new Array(GROUPS.length).fill(null).map((e, i) => GROUPS[i]).forEach((group, i) => {
       const { winners, outputs } = group
-      return winners.length === outputs.length
+      if (winners.length === outputs.length) {
+        GROUPS[i].complete = true
+      }
+    })
+    const groupsIsComplete = GROUPS.every(group => {
+      return group.complete
     })
     // Create LUCKIES round object and transform it
     // accordingly to results
@@ -165,7 +174,9 @@ export default class Pronos extends Component {
     if (groupsIsComplete) {
       data.results.forEach(result => {
         if (result.round !== 'LL') return
-        const winners = result.winners
+        LUCKIES.winners = []
+        LUCKIES.winners_origin = ''
+        const winners = [...new Set(result.winners
           .split(',')
           .map(team => team.trim())
           .map(team => {
@@ -179,7 +190,8 @@ export default class Pronos extends Component {
             }
           }).sort((a, b) => {
             return a.group_origin.localeCompare(b.group_origin)
-          })
+          }).filter(e => e))]
+
         winners.forEach(winner => {
           const foundInLosers = LUCKIES.groups.some(group => {
             const foundInGroup = group.teams.some(team => team === winner.team)
@@ -189,7 +201,7 @@ export default class Pronos extends Component {
             }
             return foundInGroup
           })
-          if (!foundInLosers) throw new Error(`${winner.team} not valid value for LL winners`)
+          if (!foundInLosers) console.warn(`${winner.team} not valid value for LL winners`)
         })
       })
     }
@@ -206,6 +218,7 @@ export default class Pronos extends Component {
         return false
       }
     })
+    if (luckysIsValid && luckysIsComplete) LUCKIES.complete = true
     // Create the FINAL stage object
     const winners = []
     GROUPS.forEach(group => winners.push(...group.winners))
@@ -313,8 +326,7 @@ export default class Pronos extends Component {
    * SUBMIT RESULT
    *
    * * * * * * * * * * * * * * * * */
-  submitResult(match, winners) {
-    const [round, number] = match.split('-')
+  submitResult(round, number, winners) {
     this.setState(state => ({
       data: {
         ...state.data,
@@ -334,9 +346,11 @@ export default class Pronos extends Component {
   render () {
     const { c, state, props } = this
     const { loading, error, data } = state
-    const { page, teams, draw, results } = data
+    const { page, teams, results } = data
+    const draw = this.buildDraw()
 
     const classes = [c]
+    console.log(draw.luckies)
 
     if (loading) {
       classes.push(`${c}_loading`)
@@ -360,9 +374,14 @@ export default class Pronos extends Component {
           tweet={page.tweet} />
       </div>
       <div className={`${c}__draw`}>
-        <Groups teams={teams} data={draw.groups} submitResult={this.submitResult} />
-        <Luckies teams={teams} data={draw.luckies} submitResult={this.submitResult} />
-        <Final teams={teams} data={draw.final} submitResult={this.submitResult} />
+        <Groups teams={teams} data={draw.groups} submitResult={this.submitResult} />{
+          draw.groups.every(group => group.complete)
+            ? draw.luckies.complete
+              ? [<Luckies key={'luckies'} teams={teams} data={draw.luckies} submitResult={this.submitResult} />,
+                <Final key={'final'} teams={teams} data={draw.final} submitResult={this.submitResult} />]
+              : <Luckies teams={teams} data={draw.luckies} submitResult={this.submitResult} />
+            : ''
+        }
       </div>
       <div className={`${c}__share`}>
         <ShareArticle short

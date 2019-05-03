@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import BlockTitle from 'libe-components/lib/text-levels/BlockTitle'
 import Paragraph from 'libe-components/lib/text-levels/Paragraph'
+import Annotation from 'libe-components/lib/text-levels/Annotation'
 
 export default class Groups extends Component {
   /* * * * * * * * * * * * * * * * *
@@ -12,6 +13,39 @@ export default class Groups extends Component {
     super()
     this.c = 'pronos-groups'
     this.findTeam = this.findTeam.bind(this)
+    this.deleteWinner = this.deleteWinner.bind(this)
+    this.addWinner = this.addWinner.bind(this)
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
+   * DELETE WINNER
+   *
+   * * * * * * * * * * * * * * * * */
+  deleteWinner (groupName, i) {
+    const group = this.props.data.find(group => group.name === groupName)
+    if (!group) return
+    if (group.winners.length === 1
+      || group.winners.length === 2) {
+      this.props.submitResult('RR', groupName, '')
+    }
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
+   * ADD WINNER
+   *
+   * * * * * * * * * * * * * * * * */
+  addWinner (groupName, id) {
+    const group = this.props.data.find(group => group.name === groupName)
+    if (!group) return
+    if (group.winners.length === 0) {
+      this.props.submitResult('RR', groupName, id)
+    } else if (group.winners.length === 1) {
+      this.props.submitResult('RR', groupName, `${group.winners[0]}, ${id}`)
+    } else {
+      this.props.submitResult('RR', groupName, id)
+    }
   }
 
   /* * * * * * * * * * * * * * * * *
@@ -34,12 +68,14 @@ export default class Groups extends Component {
   render () {
     const { c, props } = this
     const { data } = props
-    console.log(data)
+
     const classes = [c]
     return <div className={classes.join(' ')}>{
       data.map(group => {
+        const groupClasses = [`${c}__group`]
+        if (group.freeze) groupClasses.push(`${c}__group_freeze`)
         return <div key={group._id}
-          className={`${c}__group`}>
+          className={groupClasses.join(' ')}>
           <div className={`${c}__group-name`}>
             <BlockTitle>
               {group.name}
@@ -49,18 +85,41 @@ export default class Groups extends Component {
             group.teams.map(teamId => {
               const team = this.findTeam(teamId)
               return <button key={teamId}
+                disabled={group.freeze || group.winners.indexOf(teamId) !== -1}
+                onClick={e => this.addWinner(group.name, teamId)}
                 className={`${c}__team`}>
                 <img src={team.icon} />
-                <Paragraph>{team.name}</Paragraph>
+                <div className={`${c}__team-label`}>
+                  <Annotation>
+                    {team.name}
+                  </Annotation>
+                </div>
               </button>
             })
           }</div>
           <div className={`${c}__winners`}>{
             group.outputs.map((output, i) => {
               const team = this.findTeam(group.winners[i])
-              return <div key={team.id} className={`${c}__winner`}>
-                <Paragraph><span>{team.name}</span></Paragraph>
-              </div>
+              if (team) {
+                return <div key={team.id}
+                  onClick={e => this.deleteWinner(group.name, i)}
+                  style={{ background: team.color_1 }}
+                  className={`${c}__winner`}>
+                  <Paragraph>
+                    <span style={{ color: team.color_2 }}>{team.name}</span>
+                  </Paragraph>
+                </div>
+              } else {
+                return <div key={`empty-${i}`}
+                  style={{ background: '#DDD' }}
+                  className={`${c}__winner`}>
+                  <Paragraph>
+                    <span style={{ color: '#888' }}>
+                      {i === 0 ? '1ère place' : '2ème place'}
+                    </span>
+                  </Paragraph>
+                </div>
+              }
             })
           }</div>
         </div>
