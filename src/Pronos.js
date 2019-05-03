@@ -64,11 +64,14 @@ export default class Pronos extends Component {
         tabsParams: [
           { start: 0, end: 4, keysLinePos: 1 },
           { start: 5, end: 7, keysLinePos: 1 },
-          { start: 8, end: 10, keysLinePos: 1 },
-          { start: 11, end: 12, keysLinePos: 1 },
-          { start: 13, end: 15, keysLinePos: 1 },
-          { start: 16, end: 17, keysLinePos: 1 }
+          { start: 8, end: 11, keysLinePos: 1 },
+          { start: 12, end: 13, keysLinePos: 1 },
+          { start: 14, end: 16, keysLinePos: 1 },
+          { start: 17, end: 18, keysLinePos: 1 }
         ]
+      })
+      results.push({
+        round: '8', number: '1', winners: 'ita'
       })
       const draw = this.buildDraw({
         groups: groups,
@@ -102,9 +105,8 @@ export default class Pronos extends Component {
    *
    * * * * * * * * * * * * * * * * */
   buildDraw (data) {
-    // Create groups object and transform them
-    // accordingly to results
-    const groups = data.groups.map(group => {
+    // Create GROUPS round object
+    const GROUPS = data.groups.map(group => {
       return {
         _id: `RR-${group.id}`,
         name: group.id,
@@ -114,23 +116,25 @@ export default class Pronos extends Component {
         freeze: false
       }
     })
+    // Browse "results" object and look for groups round
+    // results in order to store them in GROUPS round object
     data.results.forEach(result => {
       if (result.round !== 'RR') return
       const _id = `${result.round}-${result.number}`
       const winners = result.winners.split(',').map(team => team.trim())
-      const matchId = groups.findIndex(group => {
+      const matchId = GROUPS.findIndex(group => {
         return group._id === _id
       })
-      groups[matchId].winners = winners
-      groups[matchId].freeze = true
+      GROUPS[matchId].winners = winners
+      GROUPS[matchId].freeze = true
     })
-    const groupsIsComplete = groups.every(group => {
+    const groupsIsComplete = GROUPS.every(group => {
       const { winners, outputs } = group
       return winners.length === outputs.length
     })
-    
-    // Create lucky losers
-    const luckyLosers = {
+    // Create LUCKYS round object and transform it
+    // accordingly to results
+    const LUCKYS = {
       _id: 'LL-1',
       groups: [],
       outputs: data.format.lucky_losers
@@ -144,9 +148,12 @@ export default class Pronos extends Component {
         }),
       winners: [],
       winners_origin: '',
+      selected_output: null,
       freeze: false
     }
-    groups.forEach(group => {
+    // Fill the LUCKYS round with all the teams in "GROUPS"
+    // that are not found in GROUP.winners
+    GROUPS.forEach(group => {
       const teams = group.teams
       const winners = group.winners
       const losers = [...teams]
@@ -154,27 +161,117 @@ export default class Pronos extends Component {
         const winnerIndex = losers.findIndex(team => team === winner)
         losers[winnerIndex] = null
       })
-      luckyLosers.groups.push({
+      LUCKYS.groups.push({
         name: group.name,
         teams: losers.filter(team => team)
       })
     })
-    data.results.forEach(result => {
-      if (result.round !== 'LL') return
-      const winners = result.winners.split(',').map(team => team.trim())
-      winners.forEach(winner => {
-        const foundInLosers = luckyLosers.groups.some(group => {
-          const foundInGroup = group.teams.some(team => team === winner)
-          if (foundInGroup) {
-            luckyLosers.winners.push(winner)
-            luckyLosers.winners_origin += group.name
-          }
-          return foundInGroup
+    // If the group stage is over, we can populate
+    // LUCKYS with the results we find in results object
+    if (groupsIsComplete) {
+      data.results.forEach(result => {
+        if (result.round !== 'LL') return
+        const winners = result.winners
+          .split(',')
+          .map(team => team.trim())
+          .map(team => {
+            const foundGroupOrigin = GROUPS.find(group => {
+              return group.teams.indexOf(team) + 1
+            })
+            if (!foundGroupOrigin) return
+            return {
+              team: team,
+              group_origin: foundGroupOrigin.name
+            }
+          }).sort((a, b) => {
+            return a.group_origin.localeCompare(b.group_origin)
+          })
+        winners.forEach(winner => {
+          const foundInLosers = LUCKYS.groups.some(group => {
+            const foundInGroup = group.teams.some(team => team === winner.team)
+            if (foundInGroup) {
+              LUCKYS.winners.push(winner.team)
+              LUCKYS.winners_origin += group.name
+            }
+            return foundInGroup
+          })
+          if (!foundInLosers) throw new Error(`${winner.team} not valid value for LL winners`)
         })
-        if (!foundInLosers) throw new Error(`${winner} not valid value for LL winners`)
       })
+    }
+    // Find the output of the LUCKYS stage according to it's winners
+    LUCKYS.winners_origin = LUCKYS.winners_origin.split('').sort().join('')
+    const luckysIsValid = LUCKYS.outputs.length === 0 || LUCKYS.outputs.some(output => {
+      return (output.from.length >= LUCKYS.winners_origin.length)
     })
-    console.log(luckyLosers.winners_origin)
+    const luckysIsComplete = LUCKYS.outputs.length === 0 || LUCKYS.outputs.some(output => {
+      if (output.from === LUCKYS.winners_origin) {
+        LUCKYS.selected_output = output.to
+        return true
+      } else {
+        return false
+      }
+    })
+    // Create the FINAL stage object
+    const winners = []
+    GROUPS.forEach(group => winners.push(...group.winners))
+    winners.push(...LUCKYS.winners)
+    // Create an object for each round, based on the 
+    // data.format.final_phase value which gives the nb of
+    // rounds of the final phase
+    let round = parseInt(data.format.final_phase, 10)
+    const FINAL = []
+    FINAL.all_matches = []
+    while (round > 1) {
+      const roundMatches = new Array(round / 2).fill(null).map((elt, j) => ({
+        id: `${round/2}-${j+1}`,
+        round: `${round/2}`,
+        number: `${j+1}`,
+        destination: round !== 2 ? `${round/4}-${((j+1)+(j+1)%2)/2}` : 'WINNER',
+        complete: false,
+        teams: [],
+        winner: null,
+        freeze: false
+      }))
+      const thisRound = {
+        nb_teams: round,
+        round_name: round / 2,
+        matches: roundMatches
+      }
+      FINAL.push(thisRound)
+      FINAL.all_matches.push(...roundMatches)
+      round /= 2
+    }
+    // If groupIsComplete andluckysIsComplete, fill the first
+    // round of the FINAL phase
+    if (groupsIsComplete && luckysIsComplete) {
+      GROUPS.forEach(group => {
+        const winnersAndDestinations = group.winners.map((winner, i) => ({
+          team: winner,
+          destination: group.outputs[i]
+        }))
+        winnersAndDestinations.forEach(pair => {
+          const destMatch = FINAL.all_matches.find(match => match.id === pair.destination)
+          destMatch.teams.push(pair.team)
+        })
+      })
+      const luckysAndDestinations = LUCKYS.winners.map((winner, i) => ({
+        team: winner,
+        destination: LUCKYS.selected_output[i]
+      }))
+      luckysAndDestinations.forEach(pair => {
+        const destMatch = FINAL.all_matches.find(match => match.id === pair.destination)
+        destMatch.teams.push(pair.team)
+      })
+    }
+    // If groupIsComplete andluckysIsComplete, fill the first
+    // round with the given results
+    if (groupsIsComplete && luckysIsComplete) {
+      console.log(data.results)
+    }
+    console.log(FINAL)
+    // console.log(GROUPS, LUCKYS)
+
 
 
     return {
