@@ -26,6 +26,8 @@ export default class Pronos extends Component {
     this.findTeam = this.findTeam.bind(this)
     this.buildDraw = this.buildDraw.bind(this)
     this.submitResult = this.submitResult.bind(this)
+    this.deleteAllResults = this.deleteAllResults.bind(this)
+    this.deleteLLResults = this.deleteLLResults.bind(this)
     this.state = {
       loading: true,
       error: null,
@@ -419,6 +421,38 @@ export default class Pronos extends Component {
 
   /* * * * * * * * * * * * * * * * *
    *
+   * DELETE ALL RESULTS
+   *
+   * * * * * * * * * * * * * * * * */
+  deleteAllResults () {
+    this.setState(state => ({
+      data: {
+        ...state.data,
+        results: []
+      }
+    }))
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
+   * DELETE ALL RESULTS
+   *
+   * * * * * * * * * * * * * * * * */
+  deleteLLResults () {
+    const { results } = this.state.data
+    const filtered = results.filter(result => {
+      return result.round === 'RR'
+    })
+    this.setState(state => ({
+      data: {
+        ...state.data,
+        results: filtered
+      }
+    }))
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
    * FIND TEAM NAME
    *
    * * * * * * * * * * * * * * * * */
@@ -444,7 +478,6 @@ export default class Pronos extends Component {
     const winner = winnerId ? this.findTeam(winnerId) : {}
     const article = winner.article === "L'" ? winner.article : (winner.article + ' ')
     const tweet = `${page.tweet_2_1} ${article}${winner.name} ${page.tweet_2_2}`
-    console.log(data.results)
     const classes = [c]
 
     if (loading) {
@@ -469,16 +502,16 @@ export default class Pronos extends Component {
           tweet={page.tweet_1} />
       </div>
       <div className={`${c}__draw`}>
-        <Groups teams={teams} data={draw.groups} submitResult={this.submitResult} />{
+        <Groups teams={teams} data={draw.groups} deleteAllResults={this.deleteAllResults} submitResult={this.submitResult} />{
           draw.groups.every(group => group.complete)
             ? draw.luckies.complete
               ? draw.final.complete
-                ? [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} submitResult={this.submitResult} />,
+                ? [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} deleteLLResults={this.deleteLLResults} submitResult={this.submitResult} />,
                   <Final key='final' page={page} teams={teams} data={draw.final} submitResult={this.submitResult} />,
                   <Winner key='winner' page={page} teams={teams} data={draw.winner} />]
-                :  [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} submitResult={this.submitResult} />,
+                :  [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} deleteLLResults={this.deleteLLResults} submitResult={this.submitResult} />,
                   <Final key='final' page={page} teams={teams} data={draw.final} submitResult={this.submitResult} />]
-              : <Luckies page={page} teams={teams} data={draw.luckies} submitResult={this.submitResult} />
+              : <Luckies page={page} teams={teams} data={draw.luckies} deleteLLResults={this.deleteLLResults} submitResult={this.submitResult} />
             : ''
         }
       </div>

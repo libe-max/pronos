@@ -38,9 +38,14 @@ export default class Groups extends Component {
    *
    * * * * * * * * * * * * * * * * */
   deleteAllWinners () {
-    this.props.data.forEach(group => {
-      if (!group.freeze) this.deleteWinner(group.name)
-    })
+    const canDeleteAll = this.props.data.every(group => !group.freeze)
+    if (canDeleteAll) {
+      this.props.deleteAllResults()
+    } else {
+      this.props.data.forEach(group => {
+        if (!group.freeze) this.deleteWinner(group.name)
+      })
+    }
   }
 
   /* * * * * * * * * * * * * * * * *

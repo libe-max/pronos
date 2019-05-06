@@ -25,7 +25,7 @@ export default class Luckies extends Component {
    *
    * * * * * * * * * * * * * * * * */
   deleteWinners () {
-    if (!this.props.data.freeze) this.props.submitResult('LL', 1, '')
+    if (!this.props.data.freeze) this.props.deleteLLResults()
   }
 
   /* * * * * * * * * * * * * * * * *
