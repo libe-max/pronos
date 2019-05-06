@@ -103,7 +103,7 @@ export default class Groups extends Component {
                 <img src={team.icon} />
                 <div className={`${c}__team-label`}>
                   <Annotation>
-                    {team.name}
+                    {team.medium_name}
                   </Annotation>
                 </div>
               </button>
@@ -114,11 +114,13 @@ export default class Groups extends Component {
               const team = this.findTeam(group.winners[i])
               if (team) {
                 return <div key={team.id}
-                  onClick={e => this.deleteWinner(group.name, i)}
+                  onClick={e => {
+                    if (!group.freeze) this.deleteWinner(group.name, i)
+                  }}
                   style={{ background: team.color_1 }}
                   className={`${c}__winner`}>
                   <Paragraph>
-                    <span style={{ color: team.color_2 }}>{team.name}</span>
+                    <span style={{ color: team.color_2 }}>{team.medium_name}</span>
                   </Paragraph>
                 </div>
               } else {

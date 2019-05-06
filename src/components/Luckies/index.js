@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { Parser } from 'html-to-react'
 import SectionTitle from 'libe-components/lib/text-levels/SectionTitle'
 import Paragraph from 'libe-components/lib/text-levels/Paragraph'
 import Annotation from 'libe-components/lib/text-levels/Annotation'
@@ -12,6 +13,7 @@ export default class Luckies extends Component {
   constructor () {
     super()
     this.c = 'pronos-luckies'
+    this.h2r = new Parser()
     this.findTeam = this.findTeam.bind(this)
     this.deleteWinners = this.deleteWinners.bind(this)
     this.addWinner = this.addWinner.bind(this)
@@ -57,15 +59,15 @@ export default class Luckies extends Component {
    *
    * * * * * * * * * * * * * * * * */
   render () {
-    const { c, props } = this
-    const { data } = props
+    const { c, props, h2r } = this
+    const { data, page } = props
 
     const classes = [c]
     if (data.freeze) classes.push(`${c}_freeze`)
 
     return <div className={classes.join(' ')}>
-      <SectionTitle>Les meilleurs 3<sup>èmes</sup></SectionTitle>
-      <Paragraph>Sélectionnez une équipe par groupe</Paragraph>
+      <SectionTitle>{h2r.parse(page.inter_1)}</SectionTitle>
+      <Paragraph>{h2r.parse(page.sub_inter_1)}</Paragraph>
       <div className={`${c}__groups`}>{
         data.groups.map(group => {
           // [WIP] Could check if one group has already a LL

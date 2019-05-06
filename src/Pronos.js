@@ -1,12 +1,16 @@
 import React, { Component } from 'react'
+import { Parser } from 'html-to-react'
 import { parseTsvWithTabs } from 'libe-utils'
+import LibeLaboLogo from 'libe-components/lib/blocks/LibeLaboLogo'
 import LoadingError from 'libe-components/lib/blocks/LoadingError'
 import ShareArticle from 'libe-components/lib/blocks/ShareArticle'
 import InterTitle from 'libe-components/lib/text-levels/InterTitle'
+import BlockTitle from 'libe-components/lib/text-levels/BlockTitle'
 import Paragraph from 'libe-components/lib/text-levels/Paragraph'
 import Groups from './components/Groups'
 import Luckies from './components/Luckies'
 import Final from './components/Final'
+import Winner from './components/Winner'
 
 export default class Pronos extends Component {
   /* * * * * * * * * * * * * * * * *
@@ -17,7 +21,9 @@ export default class Pronos extends Component {
   constructor () {
     super()
     this.c = 'pronos'
+    this.h2r = new Parser()
     this.fetchData = this.fetchData.bind(this)
+    this.findTeam = this.findTeam.bind(this)
     this.buildDraw = this.buildDraw.bind(this)
     this.submitResult = this.submitResult.bind(this)
     this.state = {
@@ -49,11 +55,65 @@ export default class Pronos extends Component {
 
   /* * * * * * * * * * * * * * * * *
    *
+   * GENERATE LINK
+   *
+   * * * * * * * * * * * * * * * * */
+  generateLink () {
+    const short = this.state.data.results.map(r => {
+      return`${r.round}-${r.number}--${r.winners.split(',').map(e => e.trim()).join(',')}`
+    }).join(';')
+    return window.encodeURI(window.btoa(short))
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
+   * RESULTS IN PARAMS
+   *
+   * * * * * * * * * * * * * * * * */
+  resultsInParams () {
+    const search = window.location.search.slice(1)
+    const keyVals = search.split('&')
+    const params = {}
+    keyVals.forEach(keyVal => {
+      const spl = keyVal.split('=')
+      const key = spl[0]
+      const val = spl.slice(1).join('')
+      if (key && val) {
+        params[key] = val
+      }
+    })
+    if (!params.res) return []
+    const decoded = window.decodeURI(params.res)
+    try {
+      const clear = window.atob(decoded)
+      const splClear = clear.split(';')
+      const results = splClear.map(strResult => {
+        let [round, number] = strResult.split('-')
+        if (round === 'LL' && !number) {
+          const [id, winners] = strResult.split('---')
+          return { round, number, winners }
+        } else {
+          const [id, winners] = strResult.split('--')
+          return { round, number, winners }
+        }
+      })
+      return results
+    } catch (e) {
+      console.warn(e)
+      return []
+    }
+    console.log(decoded)
+    return params.res || ''
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
    * FETCH DATA
    *
    * * * * * * * * * * * * * * * * */
   fetchData () {
     const { spreadsheet } = this.props
+    const resultsInParams = this.resultsInParams()
     window.fetch(spreadsheet).then(res => {
       if (res.ok) return res.text()
       else throw new Error(`Error: ${res.status}`)
@@ -61,13 +121,13 @@ export default class Pronos extends Component {
       const [teams, groups, format, page, results, luckyLosers, freeze] = parseTsvWithTabs({
         tsv: rawData,
         tabsParams: [
-          { start: 0, end: 5, keysLinePos: 1 },
-          { start: 6, end: 8, keysLinePos: 1 },
-          { start: 9, end: 12, keysLinePos: 1 },
-          { start: 13, end: 14, keysLinePos: 1 },
-          { start: 15, end: 17, keysLinePos: 1 },
-          { start: 18, end: 19, keysLinePos: 1 },
-          { start: 20, end: 21, keysLinePos: 1 }
+          { start: 0, end: 7, keysLinePos: 1 },
+          { start: 8, end: 10, keysLinePos: 1 },
+          { start: 11, end: 14, keysLinePos: 1 },
+          { start: 15, end: 24, keysLinePos: 1 },
+          { start: 25, end: 27, keysLinePos: 1 },
+          { start: 28, end: 29, keysLinePos: 1 },
+          { start: 30, end: 31, keysLinePos: 1 }
         ]
       })
       this.setState({
@@ -80,9 +140,9 @@ export default class Pronos extends Component {
             ...format[0],
             lucky_losers: luckyLosers
           },
-          freeze: freeze,
+          freeze: resultsInParams.length ? [] : freeze,
           page: page[0],
-          results: results
+          results: resultsInParams.length ? resultsInParams : results
         }
       })
     }).catch(err => {
@@ -279,19 +339,6 @@ export default class Pronos extends Component {
         const prevRoundIsComplete = i === 0
           ? groupsIsComplete && luckysIsComplete
           : FINAL[i - 1].complete
-        if (prevRoundIsComplete) {
-          data.results.forEach(result => {
-            const resultId = `${result.round}-${result.number}`
-            if (round.name !== result.round) return false
-            const foundMatch = round.matches.find(match => match.id === resultId)
-            if (!foundMatch) return false
-            const winnerIsInTeams = foundMatch.teams.indexOf(result.winners) + 1
-            if (!winnerIsInTeams) return false
-            foundMatch.winner = result.winners
-          })
-          const roundIsComplete = round.matches.every(match => match.winner)
-          round.complete = roundIsComplete
-        }
         if (i > 0) {
           const prevRound = FINAL[i - 1]
           prevRound.matches.forEach(match => {
@@ -305,8 +352,23 @@ export default class Pronos extends Component {
             }
           })
         }
+        data.results.forEach(result => {
+          const resultId = `${result.round}-${result.number}`
+          if (round.name !== result.round) return false
+          const foundMatch = round.matches.find(match => {
+            return match.id === resultId
+          })
+          if (!foundMatch) return false
+          const winnerIsInTeams = foundMatch.teams.indexOf(result.winners) + 1
+          if (!winnerIsInTeams) return false
+          foundMatch.winner = result.winners
+        })
+        const roundIsComplete = round.matches.every(match => match.winner)
+        round.complete = roundIsComplete
       }
     }
+    FINAL.complete = FINAL.every(round => round.complete)
+
     // Find frozen matches
     data.freeze.forEach(frozen => {
       const frozenId = `${frozen.round}-${frozen.number}`
@@ -327,10 +389,14 @@ export default class Pronos extends Component {
       }
     })
 
+    // Find WINNER
+    const WINNER = (FINAL.all_matches.find(match => match.destination === 'WINNER') || {}).winner
+
     return {
       groups: GROUPS,
       luckies: LUCKIES,
-      final: FINAL
+      final: FINAL,
+      winner: WINNER
     }
   }
 
@@ -353,15 +419,32 @@ export default class Pronos extends Component {
 
   /* * * * * * * * * * * * * * * * *
    *
+   * FIND TEAM NAME
+   *
+   * * * * * * * * * * * * * * * * */
+  findTeam (teamId) {
+    const { teams } = this.state.data
+    const team = teams.find(({ id }) => id === teamId)
+    if (!team) return null
+    return team
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
    * RENDER
    *
    * * * * * * * * * * * * * * * * */
   render () {
-    const { c, state, props } = this
+    const { c, state, props, h2r } = this
     const { loading, error, data } = state
     const { page, teams, results } = data
     const draw = this.buildDraw()
-
+    const link = this.generateLink()
+    const winnerId = draw.winner
+    const winner = winnerId ? this.findTeam(winnerId) : {}
+    const article = winner.article === "L'" ? winner.article : (winner.article + ' ')
+    const tweet = `${page.tweet_2_1} ${article}${winner.name} ${page.tweet_2_2}`
+    console.log(data.results)
     const classes = [c]
 
     if (loading) {
@@ -376,31 +459,38 @@ export default class Pronos extends Component {
 
     return <div className={classes.join(' ')}>
       <div className={`${c}__head`}>
-        <InterTitle level={1}>{page.title}</InterTitle>
-        <Paragraph>{page.intro}</Paragraph>
+        <InterTitle level={1}>{h2r.parse(page.title)}</InterTitle>
+        <Paragraph>{h2r.parse(page.intro)}</Paragraph>
       </div>
       <div className={`${c}__share`}>
         <ShareArticle short
           iconsOnly
           url={props.meta.url}
-          tweet={page.tweet} />
+          tweet={page.tweet_1} />
       </div>
       <div className={`${c}__draw`}>
         <Groups teams={teams} data={draw.groups} submitResult={this.submitResult} />{
           draw.groups.every(group => group.complete)
             ? draw.luckies.complete
-              ? [<Luckies key={'luckies'} teams={teams} data={draw.luckies} submitResult={this.submitResult} />,
-                <Final key={'final'} teams={teams} data={draw.final} submitResult={this.submitResult} />]
-              : <Luckies teams={teams} data={draw.luckies} submitResult={this.submitResult} />
+              ? draw.final.complete
+                ? [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} submitResult={this.submitResult} />,
+                  <Final key='final' page={page} teams={teams} data={draw.final} submitResult={this.submitResult} />,
+                  <Winner key='winner' page={page} teams={teams} data={draw.winner} />]
+                :  [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} submitResult={this.submitResult} />,
+                  <Final key='final' page={page} teams={teams} data={draw.final} submitResult={this.submitResult} />]
+              : <Luckies page={page} teams={teams} data={draw.luckies} submitResult={this.submitResult} />
             : ''
         }
       </div>
-      <div className={`${c}__share`}>
+      {draw.final.complete
+        ? <div className={`${c}__share`}>
+        <BlockTitle>{h2r.parse(page.inter_4)}</BlockTitle>
         <ShareArticle short
           iconsOnly
-          url={props.meta.url}
-          tweet={page.tweet} />
-      </div>
+          url={`${props.meta.url}?res=${link}`}
+          tweet={tweet} />
+        </div>
+        : ''}
     </div>
   }
 }
