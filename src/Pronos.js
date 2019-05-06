@@ -104,8 +104,6 @@ export default class Pronos extends Component {
       console.warn(e)
       return []
     }
-    console.log(decoded)
-    return params.res || ''
   }
 
   /* * * * * * * * * * * * * * * * *

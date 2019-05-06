@@ -2,6 +2,7 @@
   "name": "libe-apps-template",
   "version": "0.2.0",
   "private": true,
+  "homepage": "/apps/2019/05/pronostic-coupe-du-monde-2019",
   "dependencies": {
     "html-to-react": "^1.3.4",
     "libe-components": "^0.5.6",

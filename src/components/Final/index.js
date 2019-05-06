@@ -46,12 +46,10 @@ export default class Final extends Component {
     return <div className={classes.join(' ')}>
       <SectionTitle>{h2r.parse(page.inter_2)}</SectionTitle>{
       data.map(round => {
-        console.log(round.name)
         return <div key={round.name}
           id={`${c}__round-${round.name}`}
           className={`${c}__round`}>{
           round.matches.map(match => {
-            console.log('  ', match.teams)
             return <div key={match.id}
               className={`${c}__match`}>{
               new Array(2).fill(null).map((e, i) => {
@@ -81,7 +79,6 @@ export default class Final extends Component {
                 }
                 // Team known
                 const team = this.findTeam(id)
-                console.log('    ', team)
                 return <div key={id}
                   onClick={e => {
                     if (!match.freeze
