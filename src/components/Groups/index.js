@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import BlockTitle from 'libe-components/lib/text-levels/BlockTitle'
 import Paragraph from 'libe-components/lib/text-levels/Paragraph'
 import Annotation from 'libe-components/lib/text-levels/Annotation'
+import { Parser } from 'html-to-react'
 
 export default class Groups extends Component {
   /* * * * * * * * * * * * * * * * *
@@ -12,6 +13,7 @@ export default class Groups extends Component {
   constructor () {
     super()
     this.c = 'pronos-groups'
+    this.h2r = new Parser()
     this.findTeam = this.findTeam.bind(this)
     this.deleteWinner = this.deleteWinner.bind(this)
     this.deleteAllWinners = this.deleteAllWinners.bind(this)
@@ -83,14 +85,15 @@ export default class Groups extends Component {
    *
    * * * * * * * * * * * * * * * * */
   render () {
-    const { c, props } = this
+    const { c, props, h2r } = this
     const { data } = props
 
     const classes = [c]
+
     return <div className={classes.join(' ')}>{
       data.map(group => {
         const groupClasses = [`${c}__group`]
-        if (group.freeze) groupClasses.push(`${c}__group_freeze`)          
+        if (group.freeze) groupClasses.push(`${c}__group_freeze`)
         return <div key={group._id}
           className={groupClasses.join(' ')}>
           <div className={`${c}__group-name`}>
@@ -108,7 +111,7 @@ export default class Groups extends Component {
                 <img src={team.icon} />
                 <div className={`${c}__team-label`}>
                   <Annotation>
-                    {team.medium_name}
+                    {h2r.parse(team.medium_name)}
                   </Annotation>
                 </div>
               </button>
@@ -125,7 +128,7 @@ export default class Groups extends Component {
                   style={{ background: team.color_1 }}
                   className={`${c}__winner`}>
                   <Paragraph>
-                    <span style={{ color: team.color_2 }}>{team.medium_name}</span>
+                    <span style={{ color: team.color_2 }}>{h2r.parse(team.medium_name)}</span>
                   </Paragraph>
                 </div>
               } else {
@@ -134,7 +137,7 @@ export default class Groups extends Component {
                   className={`${c}__winner`}>
                   <Paragraph>
                     <span style={{ color: '#888' }}>
-                      {i === 0 ? '1ère place' : '2ème place'}
+                      {i === 0 ? '1re place' : '2e place'}
                     </span>
                   </Paragraph>
                 </div>
@@ -145,7 +148,7 @@ export default class Groups extends Component {
       })}
       <div className={`${c}__reset`} onClick={this.deleteAllWinners}>
         <Annotation>
-          <a>Remettre à zero</a>
+          <a>Remettre à zéro</a>
         </Annotation>
       </div>
     </div>

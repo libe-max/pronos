@@ -71,15 +71,15 @@ class AppWrapper extends Component {
      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
      ga('create', 'UA-41822557-1', 'liberation.fr');
-     ga('create', 'UA-116918263-1', 'auto', 'SixPlus');
+     ga('create', 'UA-116918263-1', 'auto', 'LibeLabo');
      ga('send', 'pageview');
      ga('SixPlus.send', 'pageview');`
     xiti.innerHTML = `
     xtnv = document;
     xtsd = "https://logliberation";
-    xtsite = "381060";
+    xtsite = "507510";
     xtn2 = "48";
-    xtpage = "Static::Data::${xiti_id}";
+    xtpage = "Libelabo::${xiti_id}";
     xtdi = "";
     xt_pagetype = "";
     xt_multc = "&x1=0&x2=43&x3=&x4=&x5=&x6=7&x7=";

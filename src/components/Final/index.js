@@ -3,6 +3,7 @@ import { Parser } from 'html-to-react'
 import SectionTitle from 'libe-components/lib/text-levels/SectionTitle'
 import Svg from 'libe-components/lib/primitives/Svg'
 import Paragraph from 'libe-components/lib/text-levels/Paragraph'
+import AnnotationTitle from 'libe-components/lib/text-levels/AnnotationTitle'
 
 export default class Final extends Component {
   /* * * * * * * * * * * * * * * * *
@@ -41,18 +42,20 @@ export default class Final extends Component {
    * * * * * * * * * * * * * * * * */
   render () {
     const { c, props, h2r } = this
-    const { data, page } = props
+    const { data, page, getMatchProvenance } = props
     const classes = [c]
     return <div className={classes.join(' ')}>
       <SectionTitle>{h2r.parse(page.inter_2)}</SectionTitle>{
-      data.map(round => {
+      data.map((round, roundIndex) => {
         return <div key={round.name}
           id={`${c}__round-${round.name}`}
           className={`${c}__round`}>{
           round.matches.map(match => {
+            const provenance = getMatchProvenance(match.id)
             return <div key={match.id}
-              className={`${c}__match`}>{
-              new Array(2).fill(null).map((e, i) => {
+              className={`${c}__match`}>
+              {roundIndex === 0 ? <span className={`${c}__match-provenance`}><AnnotationTitle>{provenance}</AnnotationTitle></span> : ''}
+              {new Array(2).fill(null).map((e, i) => {
                 if (match.teams[i]) return match.teams[i]
                 else return null
               }).map((id, i) => {
@@ -87,11 +90,12 @@ export default class Final extends Component {
                       this.addWinner(match.round, match.number, id)
                     }
                   }}
-                  style={{ background: team.color_1 }}
+                  style={{ background: team ? team.color_1 : '' }}
                   className={`${classVariants.join(' ')}`}>
                   <Paragraph>
-                    <span style={{ color: team.color_2 }}>
-                      {team.short_name}
+                    <span style={{ color: team ? team.color_2 : '' }}>
+                      <span className={`${c}__team-short-name`}>{team ? team.short_name : ''}</span>
+                      <span className={`${c}__team-medium-name`}>{team ? h2r.parse(team.medium_name) : ''}</span>
                     </span>
                   </Paragraph>
                   <div className={`${c}__team-arrow`}>
