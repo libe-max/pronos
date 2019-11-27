@@ -14,7 +14,7 @@ module.exports = {
   },
   statics_url: process.env.NODE_ENV === 'production'
     ? 'https://www.liberation.fr/apps/static'
-    : 'http://10.14.40.59:3003',
+    : 'http://localhost:3003',
   api_url: process.env.NODE_ENV === 'production'
     ? 'https://libe-labo.site/api'
     : 'http://localhost:3004/api',
