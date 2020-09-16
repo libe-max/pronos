@@ -85,7 +85,7 @@ export default class Luckies extends Component {
                 <img src={team.icon} />
                 <div className={`${c}__team-label`}>
                   <Annotation>
-                    {team.name}
+                    {h2r.parse(team.medium_name)}
                   </Annotation>
                 </div>
               </button>
@@ -102,7 +102,7 @@ export default class Luckies extends Component {
               style={{ background: team.color_1 }}
               className={`${c}__winner`}>
               <Paragraph>
-                <span style={{ color: team.color_2 }}>{team.name}</span>
+                <span style={{ color: team.color_2 }}>{h2r.parse(team.medium_name)}</span>
               </Paragraph>
             </div>
           } else {
@@ -111,7 +111,7 @@ export default class Luckies extends Component {
               className={`${c}__winner`}>
               <Paragraph>
                 <span style={{ color: '#888' }}>
-                  {`Qualifié ${i}`}
+                  {`Qualifié ${i + 1}`}
                 </span>
               </Paragraph>
             </div>
@@ -131,7 +131,7 @@ export default class Luckies extends Component {
       }</div>
       <div className={`${c}__reset`} onClick={this.deleteWinners}>
         <Annotation>
-          <a>Remettre à zero</a>
+          <a>Remettre à zéro</a>
         </Annotation>
       </div>
     </div>

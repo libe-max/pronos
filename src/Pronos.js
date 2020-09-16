@@ -7,6 +7,8 @@ import ShareArticle from 'libe-components/lib/blocks/ShareArticle'
 import InterTitle from 'libe-components/lib/text-levels/InterTitle'
 import BlockTitle from 'libe-components/lib/text-levels/BlockTitle'
 import Paragraph from 'libe-components/lib/text-levels/Paragraph'
+import Annotation from 'libe-components/lib/text-levels/Annotation'
+import AnnotationTitle from 'libe-components/lib/text-levels/AnnotationTitle'
 import Groups from './components/Groups'
 import Luckies from './components/Luckies'
 import Final from './components/Final'
@@ -28,6 +30,7 @@ export default class Pronos extends Component {
     this.submitResult = this.submitResult.bind(this)
     this.deleteAllResults = this.deleteAllResults.bind(this)
     this.deleteLLResults = this.deleteLLResults.bind(this)
+    this.getMatchProvenance = this.getMatchProvenance.bind(this)
     this.state = {
       loading: true,
       error: null,
@@ -283,7 +286,7 @@ export default class Pronos extends Component {
     const winners = []
     GROUPS.forEach(group => winners.push(...group.winners))
     winners.push(...LUCKIES.winners)
-    // Create an object for each round, based on the 
+    // Create an object for each round, based on the
     // data.format.final_phase value which gives the nb of
     // rounds of the final phase
     let round = parseInt(data.format.final_phase, 10)
@@ -463,6 +466,24 @@ export default class Pronos extends Component {
 
   /* * * * * * * * * * * * * * * * *
    *
+   * GET MATCH PROVENANCE
+   *
+   * * * * * * * * * * * * * * * * */
+  getMatchProvenance (matchId) {
+    const result = []
+    this.state.data.groups.forEach((group, groupIndex) => {
+      const outputs = group.outputs.split(',').map(chunk => chunk.trim())
+      const index = outputs.findIndex(output => output === matchId)
+      if (index >= 0) {
+        result.push(`${index + 1}${group.id}`)
+      }
+    })
+    if (result.length === 1) result.push('3?')
+    return result.join(' vs ')
+  }
+
+  /* * * * * * * * * * * * * * * * *
+   *
    * RENDER
    *
    * * * * * * * * * * * * * * * * */
@@ -492,6 +513,9 @@ export default class Pronos extends Component {
       <div className={`${c}__head`}>
         <InterTitle level={1}>{h2r.parse(page.title)}</InterTitle>
         <Paragraph>{h2r.parse(page.intro)}</Paragraph>
+        <Annotation small>
+          Les quatre derniers pays participants à l'Euro 2020 seront connus à l'issue des barrages de la Ligue des Nations, qui auront lieu du 26 au 31 mars. Quatre équipes peuvent prétendre à chacun des quatre tickets&nbsp;: <b>Barragiste 1</b> - Islande, Bulgarie, Hongrie, Roumanie&nbsp;• <b>Barragiste 2</b> - Bosnie-Herzégovine, Slovaquie, Irlande, Irlande du Nord&nbsp;• <b>Barragiste 3</b> - Ecosse, Norvège, Serbie, Israël&nbsp;• <b>Barragiste 4</b> - Géorgie, Macédoine du Nord, Kosovo, Biélorussie&nbsp;• Si le barragiste 1 est la Roumanie, elle sera dans le groupe C et non le F, où elle sera remplacée par le barragiste 4.
+        </Annotation>
       </div>
       <div className={`${c}__share`}>
         <ShareArticle short
@@ -505,10 +529,10 @@ export default class Pronos extends Component {
             ? draw.luckies.complete
               ? draw.final.complete
                 ? [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} deleteLLResults={this.deleteLLResults} submitResult={this.submitResult} />,
-                  <Final key='final' page={page} teams={teams} data={draw.final} submitResult={this.submitResult} />,
+                  <Final key='final' page={page} teams={teams} data={draw.final} getMatchProvenance={this.getMatchProvenance} submitResult={this.submitResult} />,
                   <Winner key='winner' page={page} teams={teams} data={draw.winner} />]
                 :  [<Luckies key='luckies' page={page} teams={teams} data={draw.luckies} deleteLLResults={this.deleteLLResults} submitResult={this.submitResult} />,
-                  <Final key='final' page={page} teams={teams} data={draw.final} submitResult={this.submitResult} />]
+                  <Final key='final' page={page} teams={teams} data={draw.final} getMatchProvenance={this.getMatchProvenance} submitResult={this.submitResult} />]
               : <Luckies page={page} teams={teams} data={draw.luckies} deleteLLResults={this.deleteLLResults} submitResult={this.submitResult} />
             : ''
         }

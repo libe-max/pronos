@@ -2,7 +2,7 @@
   "name": "libe-apps-template",
   "version": "0.2.0",
   "private": true,
-  "homepage": "/apps/2019/05/pronostic-coupe-du-monde-2019",
+  "homepage": "/apps/2019/11/pronostic-euro-2020",
   "dependencies": {
     "html-to-react": "^1.4.1",
     "libe-components": "^0.5.6",
