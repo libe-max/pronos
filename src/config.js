@@ -8,7 +8,7 @@ module.exports = {
     xiti_id: 'pronostic-euro-2020'
   },
   tracking: {
-    active: true,
+    active: false,
     format: 'pronos',
     article: 'pronostic-euro-2020'
   },
@@ -19,5 +19,7 @@ module.exports = {
     ? 'https://libe-labo.site/api'
     : 'http://localhost:3004/api',
   stylesheet: 'pronos.css', // The name of the css file hosted at ${statics_url}/styles/apps/
-  spreadsheet: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQCM9utk0p0L3HCOK6nDstB12SSjBTKncEWv3UDJGJaF5k9JddnbSoIoCnUtT2U8iqehqI5t2hXcqsT/pub?gid=1083077486&single=true&output=tsv'
+  spreadsheet: process.env.NODE_ENV === 'production'
+    ? 'https://proxydata.liberation.fr/proxy/spreadsheets/1zucBQeRZ_SkPx13Yz5E1-Qpt1ayNWRlKPNVdAOkbZHY?out=tsv'
+    : 'http://localhost:3004/proxy/spreadsheets/1zucBQeRZ_SkPx13Yz5E1-Qpt1ayNWRlKPNVdAOkbZHY?out=tsv'
 }

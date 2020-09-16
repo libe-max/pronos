@@ -41,10 +41,12 @@ class AppWrapper extends Component {
   }
 
   componentDidMount () {
+    const { statics_url } = this.props
     const { xiti_id } = this.props.meta
     const chartbeat = document.createElement('script')
     const googleAnalytics = document.createElement('script')
     const xiti = document.createElement('script')
+    const lblbLogger = document.createElement('script')
     chartbeat.innerHTML = `
     var _sf_async_config={};
     _sf_async_config.uid = 43601;
@@ -76,10 +78,10 @@ class AppWrapper extends Component {
      ga('SixPlus.send', 'pageview');`
     xiti.innerHTML = `
     xtnv = document;
-    xtsd = "https://logliberation";
-    xtsite = "507510";
+    xtsd = "https://logs1091";
+    xtsite = "381060";
     xtn2 = "48";
-    xtpage = "Libelabo::${xiti_id}";
+    xtpage = "LibeLabo::${xiti_id}";
     xtdi = "";
     xt_pagetype = "";
     xt_multc = "&x1=0&x2=43&x3=&x4=&x5=&x6=7&x7=";
@@ -87,6 +89,8 @@ class AppWrapper extends Component {
     xt_ac = "";
     if (window.xtparam==null) { window.xtparam = ''; }
     window.xtparam += "&ptype="+xt_pagetype+"&ac="+xt_ac+"&an="+xt_an+xt_multc;`
+    lblbLogger.setAttribute('src', `${statics_url}/scripts/logger.js`)
+    document.body.appendChild(lblbLogger)
     if (process.env.NODE_ENV === 'production') {
       document.body.appendChild(chartbeat)
       document.body.appendChild(googleAnalytics)

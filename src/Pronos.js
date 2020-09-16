@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import { Parser } from 'html-to-react'
-import { parseTsvWithTabs } from 'libe-utils'
+// import { parseTsvWithTabs } from 'libe-utils'
 import LibeLaboLogo from 'libe-components/lib/blocks/LibeLaboLogo'
 import LoadingError from 'libe-components/lib/blocks/LoadingError'
 import ShareArticle from 'libe-components/lib/blocks/ShareArticle'
@@ -13,6 +13,22 @@ import Groups from './components/Groups'
 import Luckies from './components/Luckies'
 import Final from './components/Final'
 import Winner from './components/Winner'
+
+function parseTsvWithTabs ({ tsv, tabsParams }) {
+  const table = tsv.split('\n').map(line => line.split('\t').map(e => e.trim()))
+  const pages = tabsParams.map(tabParam => {
+    const pageTable = table.map(line => line.slice(tabParam.start, tabParam.end + 1))
+      .filter(line => line.join('').trim())
+      .slice(1)
+    const pageOfObjects = pageTable.slice(1).map(line => {
+      const obj = {}
+      line.forEach((cell, i) => { obj[pageTable[0][i]] = cell })
+      return obj
+    })
+    return pageOfObjects
+  })
+  return pages
+}
 
 export default class Pronos extends Component {
   /* * * * * * * * * * * * * * * * *
@@ -121,7 +137,7 @@ export default class Pronos extends Component {
       if (res.ok) return res.text()
       else throw new Error(`Error: ${res.status}`)
     }).then(rawData => {
-      const [teams, groups, format, page, results, luckyLosers, freeze] = parseTsvWithTabs({
+      const lol = parseTsvWithTabs({
         tsv: rawData,
         tabsParams: [
           { start: 0, end: 7, keysLinePos: 1 },
@@ -133,6 +149,8 @@ export default class Pronos extends Component {
           { start: 30, end: 31, keysLinePos: 1 }
         ]
       })
+      console.log(lol)
+      const [teams, groups, format, page, results, luckyLosers, freeze] = lol
       this.setState({
         loading: false,
         error: null,
@@ -498,6 +516,7 @@ export default class Pronos extends Component {
     const article = winner.article === "L'" ? winner.article : (winner.article + ' ')
     const tweet = `${page.tweet_2_1} ${article}${winner.name} ${page.tweet_2_2}`
     const classes = [c]
+    console.log(data)
 
     if (loading) {
       classes.push(`${c}_loading`)
