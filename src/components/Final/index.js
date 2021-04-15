@@ -44,6 +44,7 @@ export default class Final extends Component {
     const { c, props, h2r } = this
     const { data, page, getMatchProvenance } = props
     const classes = [c]
+
     return <div className={classes.join(' ')}>
       <SectionTitle>{h2r.parse(page.inter_2)}</SectionTitle>{
       data.map((round, roundIndex) => {
@@ -54,7 +55,7 @@ export default class Final extends Component {
             const provenance = getMatchProvenance(match.id)
             return <div key={match.id}
               className={`${c}__match`}>
-              {roundIndex === 0 ? <span className={`${c}__match-provenance`}><AnnotationTitle>{provenance}</AnnotationTitle></span> : ''}
+              {/*roundIndex === 0 ? <span className={`${c}__match-provenance`}><AnnotationTitle>{provenance}</AnnotationTitle></span> : ''*/}
               {new Array(2).fill(null).map((e, i) => {
                 if (match.teams[i]) return match.teams[i]
                 else return null

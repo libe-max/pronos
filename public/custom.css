@@ -1,0 +1,21 @@
+.pronos__share {
+  margin-top: 2rem;
+}
+
+.pronos__share .lblb-libe-labo-logo {
+  max-width: 6rem;
+}
+
+@media screen and (max-width: 63rem) {
+  .pronos__share {
+    margin-top: 2rem;
+  }
+
+  .pronos__share .lblb-share-article {
+    margin-bottom: 1rem !important;
+  }
+
+  .pronos__share .lblb-libe-labo-logo {
+    max-width: 6rem;
+  }  
+}

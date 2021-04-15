@@ -137,7 +137,7 @@ export default class Pronos extends Component {
       if (res.ok) return res.text()
       else throw new Error(`Error: ${res.status}`)
     }).then(rawData => {
-      const lol = parseTsvWithTabs({
+      const data = parseTsvWithTabs({
         tsv: rawData,
         tabsParams: [
           { start: 0, end: 7, keysLinePos: 1 },
@@ -149,8 +149,7 @@ export default class Pronos extends Component {
           { start: 30, end: 31, keysLinePos: 1 }
         ]
       })
-      console.log(lol)
-      const [teams, groups, format, page, results, luckyLosers, freeze] = lol
+      const [teams, groups, format, page, results, luckyLosers, freeze] = data
       this.setState({
         loading: false,
         error: null,
@@ -167,7 +166,6 @@ export default class Pronos extends Component {
         }
       })
     }).catch(err => {
-      console.warn(err)
       this.setState({
         error: err.message,
         loading: false
@@ -516,7 +514,6 @@ export default class Pronos extends Component {
     const article = winner.article === "L'" ? winner.article : (winner.article + ' ')
     const tweet = `${page.tweet_2_1} ${article}${winner.name} ${page.tweet_2_2}`
     const classes = [c]
-    console.log(data)
 
     if (loading) {
       classes.push(`${c}_loading`)
@@ -532,9 +529,9 @@ export default class Pronos extends Component {
       <div className={`${c}__head`}>
         <InterTitle level={1}>{h2r.parse(page.title)}</InterTitle>
         <Paragraph>{h2r.parse(page.intro)}</Paragraph>
-        <Annotation small>
+        {/*<Annotation small>
           Les quatre derniers pays participants à l'Euro 2020 seront connus à l'issue des barrages de la Ligue des Nations, qui auront lieu du 26 au 31 mars. Quatre équipes peuvent prétendre à chacun des quatre tickets&nbsp;: <b>Barragiste 1</b> - Islande, Bulgarie, Hongrie, Roumanie&nbsp;• <b>Barragiste 2</b> - Bosnie-Herzégovine, Slovaquie, Irlande, Irlande du Nord&nbsp;• <b>Barragiste 3</b> - Ecosse, Norvège, Serbie, Israël&nbsp;• <b>Barragiste 4</b> - Géorgie, Macédoine du Nord, Kosovo, Biélorussie&nbsp;• Si le barragiste 1 est la Roumanie, elle sera dans le groupe C et non le F, où elle sera remplacée par le barragiste 4.
-        </Annotation>
+        </Annotation>*/}
       </div>
       <div className={`${c}__share`}>
         <ShareArticle short
@@ -556,15 +553,14 @@ export default class Pronos extends Component {
             : ''
         }
       </div>
-      {draw.final.complete
-        ? <div className={`${c}__share`}>
+      <div className={`${c}__share`}>
         <BlockTitle>{h2r.parse(page.inter_4)}</BlockTitle>
         <ShareArticle short
           iconsOnly
-          url={`${props.meta.url}?res=${link}`}
+          url={`${props.meta.url}/?res=${link}`}
           tweet={tweet} />
-        </div>
-        : ''}
+        <LibeLaboLogo />
+      </div>
     </div>
   }
 }
